@@ -9,6 +9,21 @@ import java.sql.Statement;
 
 public class PatientInfo {
     public static void main(String[] args) {
+        JWindow window = new JWindow();
+        JPanel content = (JPanel) window.getContentPane();
+        JLabel label = new JLabel("Welcome", SwingConstants.CENTER);
+        content.add(label, BorderLayout.CENTER);
+        window.setSize(300, 300);
+        window.setLocationRelativeTo(null);
+        window.setVisible(true);
+        try{
+            Thread.sleep(2000);
+        }catch(InterruptedException e){
+            e.printStackTrace();
+        }
+        window.setVisible(false);
+        window.dispose();
+        
         SwingUtilities.invokeLater(new Runnable(){
             public void run(){
                 createAndShowGUI();
@@ -17,6 +32,7 @@ public class PatientInfo {
     }
 
     private static void createAndShowGUI(){
+        
         JFrame frame = new JFrame("Patient Creation");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(400,200);

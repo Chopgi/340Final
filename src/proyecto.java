@@ -27,7 +27,7 @@ public class proyecto {
         //nButton.setPreferredSize(new Dimension(195, 50));
         yButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e){
-                label.setText("You clicked yes");
+                label.setText("You clicked yes!!!");
             }
         });
         nButton.addActionListener(new ActionListener(){
