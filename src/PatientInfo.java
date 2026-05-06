@@ -19,7 +19,7 @@ public class PatientInfo {
     private static void createAndShowGUI(){
         JFrame frame = new JFrame("Patient Creation");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(400,200);
+        frame.setSize(700,600);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
@@ -37,6 +37,15 @@ public class PatientInfo {
         JTextField AgeField = new JTextField();
         JTextField GenderField = new JTextField();
 
+        JTextArea allergiesArea = new JTextArea(3, 20);
+        JTextArea medicationsArea = new JTextArea(3, 20);
+        JTextArea symptomsArea = new JTextArea(3, 20);
+
+        JComboBox<Integer> painLevelBox = new JComboBox<>();
+        for (int i = 0; i <= 10; i++) {
+            painLevelBox.addItem(i);
+        }
+
         //adding labels and textboxes to boxPanel
         boxPanel.add(FNlabel);
         boxPanel.add(LNlabel);
@@ -46,24 +55,65 @@ public class PatientInfo {
         boxPanel.add(Glabel);
         boxPanel.add(AgeField);
         boxPanel.add(GenderField);
+        boxPanel.add(new JLabel("Allergies", JLabel.CENTER));
+        boxPanel.add(new JScrollPane(allergiesArea));
+
+        boxPanel.add(new JLabel("Medications", JLabel.CENTER));
+        boxPanel.add(new JScrollPane(medicationsArea));
+
+        boxPanel.add(new JLabel("Symptoms", JLabel.CENTER));
+        boxPanel.add(new JScrollPane(symptomsArea));
+
+        boxPanel.add(new JLabel("Pain Level", JLabel.CENTER));
+        boxPanel.add(painLevelBox);
         
-        panel.add(boxPanel, BorderLayout.CENTER);
+        panel.add(new JScrollPane(boxPanel), BorderLayout.CENTER);
 
         
         JButton button = new JButton("Submit Patient");
         button.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e){
-                //label.setText("You clicked the button!");
-                try{
-                    sqlPatAdd(FnameField.getText(), LnameField.getText(), Integer.parseInt(AgeField.getText()), GenderField.getText());
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    String firstName = FnameField.getText().trim();
+                    String lastName = LnameField.getText().trim();
+                    String gender = GenderField.getText().trim();
+                    String allergies = allergiesArea.getText().trim();
+                    String medications = medicationsArea.getText().trim();
+                    String symptoms = symptomsArea.getText().trim();
+                    int painLevel = (Integer) painLevelBox.getSelectedItem();
+
+                    if (firstName.isEmpty() || lastName.isEmpty() || AgeField.getText().trim().isEmpty()) {
+                        JOptionPane.showMessageDialog(frame, "First name, last name, and age are required.");
+                        return;
+                    }
+
+                    int age = Integer.parseInt(AgeField.getText().trim());
+
+                    sqlPatAdd(firstName, lastName, age, gender);
+
+                    JOptionPane.showMessageDialog(frame,
+                            "Patient saved successfully.\n\n" +
+                            "Medical History Summary:\n" +
+                            "Allergies: " + allergies + "\n" +
+                            "Medications: " + medications + "\n" +
+                            "Symptoms: " + symptoms + "\n" +
+                            "Pain Level: " + painLevel
+                    );
+
+                    FnameField.setText("");
+                    LnameField.setText("");
+                    AgeField.setText("");
+                    GenderField.setText("");
+                    allergiesArea.setText("");
+                    medicationsArea.setText("");
+                    symptomsArea.setText("");
+                    painLevelBox.setSelectedIndex(0);
+
+                } catch (NumberFormatException error) {
+                    JOptionPane.showMessageDialog(frame, "Age must be a valid number.");
+                } catch (Exception error) {
+                    JOptionPane.showMessageDialog(frame, "Error: " + error.getMessage());
                 }
-                catch (Exception error){
-                    System.err.println(error.getMessage());
-                }
-                FnameField.setText("");
-                LnameField.setText("");
-                AgeField.setText("");
-                GenderField.setText("");
             }
         });
 
