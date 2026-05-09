@@ -6,7 +6,18 @@ import java.sql.Statement;
 import javax.swing.*;
 
 public class PatientInfoProduction {
+    //declaring these objects first, in order to share them and their values (access to them, etc) across methods
+    private JFrame frame;
+    private CardLayout questionCardLayout;
+    private JPanel cardPanel;
+    private JButton backButton, nextOrSubButton;
+    private JRadioButton yesButton, noButton;
+    private JTextField FnameField, LnameField, AgeField, GenderField;
+    private JTextField allergiesArea, medicationsArea;
+    private JComboBox<Integer> painLevelBox;
+    private String currentCard = "BasicQ"; //pre-set current card as basic question card
     public static void main(String[] args) {
+        //splash screen
         JWindow window = new JWindow();
         JPanel content = (JPanel) window.getContentPane();
         JLabel label = new JLabel("Welcome", SwingConstants.CENTER);
@@ -22,16 +33,19 @@ public class PatientInfoProduction {
         window.setVisible(false);
         window.dispose();
         
+        //actual program
         SwingUtilities.invokeLater(new Runnable(){
             public void run(){
-                createAndShowGUI();
+                PatientInfoProduction program = new PatientInfoProduction();
+                program.createAndShowGUI();
             }
         });
     }
 
-    private static void createAndShowGUI(){
-        
-        JFrame frame = new JFrame("Patient Creation");
+    
+    private void createAndShowGUI(){
+    
+        frame = new JFrame("Patient Creation");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(700,600);
         frame.setLocationRelativeTo(null);
@@ -45,18 +59,18 @@ public class PatientInfoProduction {
         JLabel Alabel = new JLabel("Age", JLabel.CENTER);
         JLabel Glabel = new JLabel("Gender", JLabel.CENTER);
         //text fields
-        JTextField FnameField = new JTextField();
-        JTextField LnameField = new JTextField();
-        JTextField AgeField = new JTextField();
-        JTextField GenderField = new JTextField();
+        FnameField = new JTextField();
+        LnameField = new JTextField();
+        AgeField = new JTextField();
+        GenderField = new JTextField();
         //new text areas -> text fields
-
         //TO DO: Move allergies & medications to advanced and replace with yes/no radio
-        //Yes/no radio
+
+        // Yes/no radio
         ButtonGroup YNbuttonGroup = new ButtonGroup();
         
-        JRadioButton yesButton = new JRadioButton("Yes");
-        JRadioButton noButton = new JRadioButton("No");
+        yesButton = new JRadioButton("Yes");
+        noButton = new JRadioButton("No");
         
         YNbuttonGroup.add(yesButton);
         YNbuttonGroup.add(noButton);
@@ -64,10 +78,21 @@ public class PatientInfoProduction {
         JPanel radioButtonPanel = new JPanel(new GridLayout(0,2));
         radioButtonPanel.add(yesButton);
         radioButtonPanel.add(noButton);
+
+        //Creating ActionListener (radioListener), which activates when a Rbutton is selected, that calls updateNavigationButtons()
+        ActionListener radioListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+                updateNavigationButtons();
+            };
+        };
+        yesButton.addActionListener(radioListener);
+        noButton.addActionListener(radioListener);
+        
         //symptoms and painlevel dropdown 
         JTextField symptomsArea = new JTextField();
         //combobox for pain level
-        JComboBox<Integer> painLevelBox = new JComboBox<>();
+        painLevelBox = new JComboBox<>();
         for (int i = 0; i <= 10; i++) {
             painLevelBox.addItem(i);
         }
@@ -93,8 +118,8 @@ public class PatientInfoProduction {
 
         //Advanced question card panel
         JPanel questionPanel2 = new JPanel(new GridLayout(0,2));
-        JTextField allergiesArea = new JTextField();
-        JTextField medicationsArea = new JTextField();
+        allergiesArea = new JTextField();
+        medicationsArea = new JTextField();
         questionPanel2.add(new JLabel("Allergies", JLabel.CENTER));
         questionPanel2.add(allergiesArea);
         questionPanel2.add(new JLabel("Medications", JLabel.CENTER));
@@ -102,27 +127,29 @@ public class PatientInfoProduction {
 
         
         //adding panels to frame
-        CardLayout questionCardLayout = new CardLayout();
-        JPanel cardpanel = new JPanel(questionCardLayout);
-        cardpanel.add(boxPanel, "BasicQ");
-        cardpanel.add(questionPanel2, "AdvancedQ");
-        mainBLpanel.add(cardpanel, BorderLayout.CENTER);
+        questionCardLayout = new CardLayout();
+        cardPanel = new JPanel(questionCardLayout);
+        cardPanel.add(boxPanel, "BasicQ");
+        cardPanel.add(questionPanel2, "AdvancedQ");
+        mainBLpanel.add(cardPanel, BorderLayout.CENTER);
         
         //Buttons
         JPanel buttonPanel = new JPanel(new GridLayout(0,2));
         mainBLpanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        JButton backButton = new JButton("Back");
+        backButton = new JButton("Back");
         backButton.setEnabled(false);
         buttonPanel.add(backButton);
 
-        JButton nextOrSubButton = new JButton("Submit Patient");
-        //set button to be submit if radio is no & next if radio is yes -- fix the below to work
-        if (yesButton.isSelected()){
-            nextOrSubButton.setText("Next");
-        } else if (noButton.isSelected()){
-            nextOrSubButton.setText("Submit Patient");
-        }
+        nextOrSubButton = new JButton("Submit Patient");
+        //set button to be submit if radio is no & next if radio is yes
+        ActionListener nextOrSubListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+                areBasicFieldsValid();
+            };
+        };
+        nextOrSubButton.addActionListener(nextOrSubListener);        
         nextOrSubButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
@@ -172,6 +199,30 @@ public class PatientInfoProduction {
         buttonPanel.add(nextOrSubButton);
         frame.getContentPane().add(mainBLpanel);
     }
+    //Radio button logic to update submit/next button
+    private void updateNavigationButtons(){
+        if (currentCard.equals("BasicQ")){
+            backButton.setEnabled(false);
+            if (yesButton.isSelected()){
+                nextOrSubButton.setText("Next");
+            } else if (noButton.isSelected()){
+                nextOrSubButton.setText("Submit Patient");
+            }
+        } else {
+            backButton.setEnabled(true);
+            nextOrSubButton.setText("Submit Patient");
+        }
+    }
+    private void areBasicFieldsValid(){
+        if (FnameField.getText().isBlank() || LnameField.getText().isBlank() || AgeField.getText().isBlank()) {
+                        JOptionPane.showMessageDialog(frame, "First name, last name, and age are required.");
+                        return;
+                    }
+
+    }
+
+
+
     //sql logic
     public static void sqlPatAdd(String fName, String lName, Integer age, String gender) throws Exception {
         String jdbcURL = "jdbc:mysql://localhost:3306/its340LAB8db";
