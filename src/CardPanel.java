@@ -28,7 +28,6 @@ public class CardPanel extends JPanel {
 
     public static void main(String[] args) {
         EventQueue.invokeLater(new Runnable() {
-
             @Override
             public void run() {
                 create();
@@ -43,17 +42,17 @@ public class CardPanel extends JPanel {
             CardPanel p = new CardPanel("Panel " + String.valueOf(i));
             cards.add(p, p.toString());
         }
+        
         JPanel control = new JPanel();
         control.add(new JButton(new AbstractAction("\u22b2Prev") {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 CardLayout cl = (CardLayout) cards.getLayout();
                 cl.previous(cards);
             }
         }));
-        control.add(new JButton(new AbstractAction("Next\u22b3") {
 
+        control.add(new JButton(new AbstractAction("Next\u22b3") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 CardLayout cl = (CardLayout) cards.getLayout();
