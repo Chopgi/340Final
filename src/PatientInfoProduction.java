@@ -1,11 +1,9 @@
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.Statement;
+import javax.swing.*;
 
 public class PatientInfoProduction {
     public static void main(String[] args) {
@@ -52,8 +50,21 @@ public class PatientInfoProduction {
         JTextField AgeField = new JTextField();
         JTextField GenderField = new JTextField();
         //new text areas -> text fields
-        JTextField allergiesArea = new JTextField();
-        JTextField medicationsArea = new JTextField();
+
+        //TO DO: Move allergies & medications to advanced and replace with yes/no radio
+        //Yes/no radio
+        ButtonGroup YNbuttonGroup = new ButtonGroup();
+        
+        JRadioButton yesButton = new JRadioButton("Yes");
+        JRadioButton noButton = new JRadioButton("No");
+        
+        YNbuttonGroup.add(yesButton);
+        YNbuttonGroup.add(noButton);
+        //RadioButton panel
+        JPanel radioButtonPanel = new JPanel(new GridLayout(0,2));
+        radioButtonPanel.add(yesButton);
+        radioButtonPanel.add(noButton);
+        //symptoms and painlevel dropdown 
         JTextField symptomsArea = new JTextField();
         //combobox for pain level
         JComboBox<Integer> painLevelBox = new JComboBox<>();
@@ -70,23 +81,31 @@ public class PatientInfoProduction {
         boxPanel.add(Glabel);
         boxPanel.add(AgeField);
         boxPanel.add(GenderField);
-        boxPanel.add(new JLabel("Allergies", JLabel.CENTER));
-        boxPanel.add(allergiesArea);
-
-        boxPanel.add(new JLabel("Medications", JLabel.CENTER));
-        boxPanel.add(medicationsArea);
 
         boxPanel.add(new JLabel("Symptoms", JLabel.CENTER));
         boxPanel.add(symptomsArea);
 
         boxPanel.add(new JLabel("Pain Level", JLabel.CENTER));
-        boxPanel.add(painLevelBox);
+        boxPanel.add(painLevelBox);        
+
+        boxPanel.add(new JLabel("Additional Information?", JLabel.CENTER));
+        boxPanel.add(radioButtonPanel);        
+
+        //Advanced question card panel
+        JPanel questionPanel2 = new JPanel(new GridLayout(0,2));
+        JTextField allergiesArea = new JTextField();
+        JTextField medicationsArea = new JTextField();
+        questionPanel2.add(new JLabel("Allergies", JLabel.CENTER));
+        questionPanel2.add(allergiesArea);
+        questionPanel2.add(new JLabel("Medications", JLabel.CENTER));
+        questionPanel2.add(medicationsArea);
+
         
         //adding panels to frame
         CardLayout questionCardLayout = new CardLayout();
         JPanel cardpanel = new JPanel(questionCardLayout);
         cardpanel.add(boxPanel, "BasicQ");
-        //cardpanel.add(2ndpanel);
+        cardpanel.add(questionPanel2, "AdvancedQ");
         mainBLpanel.add(cardpanel, BorderLayout.CENTER);
         
         //Buttons
@@ -94,10 +113,16 @@ public class PatientInfoProduction {
         mainBLpanel.add(buttonPanel, BorderLayout.SOUTH);
 
         JButton backButton = new JButton("Back");
-        backButton.setEnabled(true);
+        backButton.setEnabled(false);
         buttonPanel.add(backButton);
 
         JButton nextOrSubButton = new JButton("Submit Patient");
+        //set button to be submit if radio is no & next if radio is yes -- fix the below to work
+        if (yesButton.isSelected()){
+            nextOrSubButton.setText("Next");
+        } else if (noButton.isSelected()){
+            nextOrSubButton.setText("Submit Patient");
+        }
         nextOrSubButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
