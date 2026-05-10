@@ -76,10 +76,8 @@ public class PatientInfoProduction {
         AgeField = new JTextField();
         GenderField = new JTextField();
         bloodField = new JTextField();
-        //new text areas -> text fields
-        //TO DO: Move allergies & medications to advanced and replace with yes/no radio
 
-        // Yes/no radio
+        // Yes/no radio buttons
         YNbuttonGroup = new ButtonGroup();
         
         yesButton = new JRadioButton("Yes");
@@ -92,7 +90,7 @@ public class PatientInfoProduction {
         radioButtonPanel.add(yesButton);
         radioButtonPanel.add(noButton);
 
-        //Creating ActionListener (radioListener), which activates when a Rbutton is selected, that calls updateNavigationButtons()
+        //Creating ActionListener (radioListener), which activates when a Radio button is selected, that calls updateNavigationButtons()
         ActionListener radioListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e){
@@ -175,6 +173,9 @@ public class PatientInfoProduction {
         nextOrSubButton = new JButton("Submit Patient");
         nextOrSubButton.setEnabled(false);
         nextButtonPressed = false;
+        //Checks if required fields are filled & state of button (if it is next or submit)
+        //Adds answers to the global ArrayList, interviewAnswers
+        //Adds basic info only one time, to prevent duplication of submitted info in interviewAnswers
         ActionListener nextOrSubListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e){
@@ -306,16 +307,16 @@ public class PatientInfoProduction {
                     "Name: "+ FnameField.getText().trim()+" "+ LnameField.getText().trim()+"\n"+
                     "Age: " + age + "\n" +
                     "Gender: " + GenderField.getText().trim() + "\n" +
-                    "Allergies: " + allergiesArea.getText().trim() + "\n" +
-                    "Medications: " + medicationsArea.getText().trim() + "\n" +
-                    "Symptoms: " + symptomsArea.getText().trim() + "\n" +
-                    "Immunizations: " + immunizationsArea.getText().trim() + "\n" +
-                    "Hereditary Diseases: " + hereditaryArea.getText().trim() + "\n" +
+                    "Allergies: " + allergyList.replace(",", ", ") + "\n" +
+                    "Medications: " + medicationList.replace(",", ", ") + "\n" +
+                    "Symptoms: " + symptomList.replace(",", ", ") + "\n" +
+                    "Immunizations: " + immunizationList.replace(",", ", ") + "\n" +
+                    "Hereditary Diseases: " + hereditaryDiseaseList.replace(",", ", ") + "\n" +
                     "Pain Level: " + painLevel
                 );
             }
             
-
+            //resetting fields
             FnameField.setText("");
             LnameField.setText("");
             AgeField.setText("");
@@ -369,6 +370,7 @@ public class PatientInfoProduction {
         }
         return ""; //return nothing if column name not found
     }
+    //method to insert a CSV stored as a string into the DB, using the newly created patient ID
     private void insertIntoCommaSepList(Integer patID, String category, String rawList){
         if (rawList == null || rawList.isBlank()){
             return;
@@ -402,11 +404,13 @@ public class PatientInfoProduction {
     }
 
     //Actual insertion of SQL values
+    //Takes ArrayList of Answer class items and prepares an SQL statement with inputted answers, ignoring null values  
     public void sqlPatAdd(ArrayList<Answer> answerList) throws Exception {
         String jdbcURL = "jdbc:mysql://localhost:3306/its340ProjectDB";
         String username = "root";
         String password = "toor";
 
+        //distinguish numeric columns + list the basic column names
         String[] columnNames = {"firstName", "lastName", "age", "gender", "blood_type", "pain_level"};
         Set<String> numericColumnNames = Set.of("age", "pain_level");
 
@@ -442,11 +446,12 @@ public class PatientInfoProduction {
             Connection conn = DriverManager.getConnection(jdbcURL, username, password);
             PreparedStatement pstmt = conn.prepareStatement(SQLquery, Statement.RETURN_GENERATED_KEYS);
             pstmt.executeUpdate();
-
+            //We are getting the newly generated AUTO_INCREMENT PRIMARY KEY for patient_ID from the DB
             try {
                 ResultSet createdPatID = pstmt.getGeneratedKeys();
                 if (createdPatID.next()){
                     patientID = createdPatID.getInt(1);
+                    //we set the newly created patientID as a variable of the same name 
                     System.out.println(patientID);
                 }
             } catch (Exception e){
