@@ -22,6 +22,7 @@ public class PatientInfoProduction {
     private JTextField allergiesArea, medicationsArea, symptomsArea, immunizationsArea, hereditaryArea ;
     private JComboBox<Integer> painLevelBox;
     private ArrayList<Answer> interviewAnswers = new ArrayList<>();
+    private String allergyList, hereditaryDiseaseList, immunizationList, medicationList, symptomList; //raw, comma seperated lists as strings
     private Boolean nextButtonPressed;
     private Integer patientID;
     private String currentCard = "BasicQ"; //pre-set current card as basic question card
@@ -203,10 +204,12 @@ public class PatientInfoProduction {
                         }
                         submitPatientSQLinfo();
                     } else if (currentCard.equals("AdvancedQ") && areAdvancedFieldsValid()){
-                        interviewAnswers.add(new Answer("allergies", allergiesArea.getText().trim()));
-                        interviewAnswers.add(new Answer("medications", medicationsArea.getText().trim()));
+                        allergyList = allergiesArea.getText().trim();
+                        hereditaryDiseaseList = hereditaryArea.getText().trim();
+                        immunizationList = immunizationsArea.getText().trim();
+                        medicationList = medicationsArea.getText().trim();
+                        symptomList = symptomsArea.getText().trim();
                         submitPatientSQLinfo();
-
                     }
                 }
             };
@@ -292,6 +295,11 @@ public class PatientInfoProduction {
             );  
             } else{
                 sqlPatAdd(interviewAnswers);
+                insertIntoCommaSepList(patientID, "allergen", allergyList);
+                insertIntoCommaSepList(patientID, "hereditary_disease", hereditaryDiseaseList);
+                insertIntoCommaSepList(patientID, "immunization", immunizationList);
+                insertIntoCommaSepList(patientID, "medication", medicationList);
+                insertIntoCommaSepList(patientID, "symptom", symptomList);
                 JOptionPane.showMessageDialog(frame,
                     "Patient saved successfully.\n\n" +
                     "Medical History Summary:\n" +
@@ -301,6 +309,8 @@ public class PatientInfoProduction {
                     "Allergies: " + allergiesArea.getText().trim() + "\n" +
                     "Medications: " + medicationsArea.getText().trim() + "\n" +
                     "Symptoms: " + symptomsArea.getText().trim() + "\n" +
+                    "Immunizations: " + immunizationsArea.getText().trim() + "\n" +
+                    "Hereditary Diseases: " + hereditaryArea.getText().trim() + "\n" +
                     "Pain Level: " + painLevel
                 );
             }
@@ -314,6 +324,9 @@ public class PatientInfoProduction {
             medicationsArea.setText("");
             symptomsArea.setText("");
             bloodField.setText("");
+            immunizationsArea.setText("");
+            hereditaryArea.setText("");
+            //lists do not need to be reset since they are remade upon clicking submit
             painLevelBox.setSelectedIndex(0);
             YNbuttonGroup.clearSelection();
             nextOrSubButton.setEnabled(false);
@@ -356,8 +369,36 @@ public class PatientInfoProduction {
         }
         return ""; //return nothing if column name not found
     }
-    private void insertIntoCommaSepList(String rawList){
+    private void insertIntoCommaSepList(Integer patID, String category, String rawList){
+        if (rawList == null || rawList.isBlank()){
+            return;
+        }
+        
         String[] items = rawList.split(",");
+        String tableName = category + "_history";
+
+        String jdbcURL = "jdbc:mysql://localhost:3306/its340ProjectDB";
+        String username = "root";
+        String password = "toor";
+        
+        try{
+            Connection conn = DriverManager.getConnection(jdbcURL, username, password);
+            Statement stmt = conn.createStatement();
+            
+            for (String item : items){
+                String trimmedItem = item.trim();
+                if (trimmedItem.isBlank()){
+                    continue;
+                }
+                String listSQLstatement ="INSERT INTO "+ tableName +"(patientID, "+ category +") VALUES ("+patID+", '"+trimmedItem +"')";
+                stmt.executeUpdate(listSQLstatement);
+                System.out.println("running the query: "+listSQLstatement);
+            }
+            conn.close();
+        } catch(Exception e){
+            System.err.println(e.getMessage());
+        }
+
     }
 
     //Actual insertion of SQL values
