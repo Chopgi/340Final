@@ -2,6 +2,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Set;
@@ -20,7 +22,8 @@ public class PatientInfoProduction {
     private JTextField allergiesArea, medicationsArea, symptomsArea, immunizationsArea, hereditaryArea ;
     private JComboBox<Integer> painLevelBox;
     private ArrayList<Answer> interviewAnswers = new ArrayList<>();
-    public Boolean nextButtonPressed;
+    private Boolean nextButtonPressed;
+    private Integer patientID;
     private String currentCard = "BasicQ"; //pre-set current card as basic question card
     public static void main(String[] args) {
         //splash screen
@@ -396,8 +399,18 @@ public class PatientInfoProduction {
 
         try{
             Connection conn = DriverManager.getConnection(jdbcURL, username, password);
-            Statement stmt = conn.createStatement();
-            stmt.executeUpdate(SQLquery);
+            PreparedStatement pstmt = conn.prepareStatement(SQLquery, Statement.RETURN_GENERATED_KEYS);
+            pstmt.executeUpdate();
+
+            try {
+                ResultSet createdPatID = pstmt.getGeneratedKeys();
+                if (createdPatID.next()){
+                    patientID = createdPatID.getInt(1);
+                    System.out.println(patientID);
+                }
+            } catch (Exception e){
+                System.err.println(e.getMessage());
+            }
             conn.close();
         } catch(Exception e){
             System.err.println(e.getMessage());
