@@ -4,7 +4,7 @@ import java.awt.event.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
+//import java.sql.ResultSet;
 import java.sql.Statement;
 
 public class PatientInfo {
