@@ -3,6 +3,9 @@ import java.awt.event.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Set;
+
 import javax.swing.*;
 
 public class PatientInfoProduction {
@@ -13,9 +16,11 @@ public class PatientInfoProduction {
     private JButton backButton, nextOrSubButton;
     private ButtonGroup YNbuttonGroup;
     private JRadioButton yesButton, noButton;
-    private JTextField FnameField, LnameField, AgeField, GenderField;
-    private JTextField allergiesArea, medicationsArea, symptomsArea;
+    private JTextField FnameField, LnameField, AgeField, GenderField, bloodField;
+    private JTextField allergiesArea, medicationsArea, symptomsArea, immunizationsArea, hereditaryArea ;
     private JComboBox<Integer> painLevelBox;
+    private ArrayList<Answer> interviewAnswers = new ArrayList<>();
+    public Boolean nextButtonPressed;
     private String currentCard = "BasicQ"; //pre-set current card as basic question card
     public static void main(String[] args) {
         //splash screen
@@ -51,6 +56,7 @@ public class PatientInfoProduction {
         frame.setSize(700,600);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+        
 
         JPanel mainBLpanel = new JPanel(new BorderLayout());
         JPanel boxPanel = new JPanel(new GridLayout(0,2));
@@ -59,11 +65,13 @@ public class PatientInfoProduction {
         JLabel LNlabel = new JLabel("Last Name", JLabel.CENTER);
         JLabel Alabel = new JLabel("Age", JLabel.CENTER);
         JLabel Glabel = new JLabel("Gender", JLabel.CENTER);
+        JLabel Blabel = new JLabel("Blood Type", JLabel.CENTER);
         //text fields
         FnameField = new JTextField();
         LnameField = new JTextField();
         AgeField = new JTextField();
         GenderField = new JTextField();
+        bloodField = new JTextField();
         //new text areas -> text fields
         //TO DO: Move allergies & medications to advanced and replace with yes/no radio
 
@@ -90,8 +98,12 @@ public class PatientInfoProduction {
         yesButton.addActionListener(radioListener);
         noButton.addActionListener(radioListener);
         
-        //symptoms and painlevel dropdown 
+        //symptoms, allergies, immunizations, hereditary deseases, and painlevel dropdown 
         symptomsArea = new JTextField();
+        allergiesArea = new JTextField();
+        medicationsArea = new JTextField();
+        immunizationsArea = new JTextField();
+        hereditaryArea = new JTextField();
         //combobox for pain level
         painLevelBox = new JComboBox<>();
         for (int i = 0; i <= 10; i++) {
@@ -108,23 +120,28 @@ public class PatientInfoProduction {
         boxPanel.add(AgeField);
         boxPanel.add(GenderField);
 
-        boxPanel.add(new JLabel("Symptoms", JLabel.CENTER));
-        boxPanel.add(symptomsArea);
-
         boxPanel.add(new JLabel("Pain Level", JLabel.CENTER));
-        boxPanel.add(painLevelBox);        
+        boxPanel.add(painLevelBox);    
+        boxPanel.add(Blabel);
+        boxPanel.add(bloodField);            
 
         boxPanel.add(new JLabel("Additional Information?", JLabel.CENTER));
         boxPanel.add(radioButtonPanel);        
 
         //Advanced question card panel
         JPanel questionPanel2 = new JPanel(new GridLayout(0,2));
-        allergiesArea = new JTextField();
-        medicationsArea = new JTextField();
-        questionPanel2.add(new JLabel("Allergies", JLabel.CENTER));
+        
+        questionPanel2.add(new JLabel("Allergies (single comma seperated)", JLabel.CENTER));
         questionPanel2.add(allergiesArea);
-        questionPanel2.add(new JLabel("Medications", JLabel.CENTER));
+        questionPanel2.add(new JLabel("Medications (single comma seperated)", JLabel.CENTER));
         questionPanel2.add(medicationsArea);
+        questionPanel2.add(new JLabel("Symptoms (single comma seperated)", JLabel.CENTER));
+        questionPanel2.add(symptomsArea);
+        questionPanel2.add(new JLabel("Immunizations (comma separated)", JLabel.CENTER));
+        questionPanel2.add(immunizationsArea);
+        questionPanel2.add(new JLabel("Hereditary Diseases (comma separated)", JLabel.CENTER));
+        questionPanel2.add(hereditaryArea);
+
 
         
         //adding panels to frame
@@ -153,17 +170,40 @@ public class PatientInfoProduction {
         //Next or submit button & logic
         nextOrSubButton = new JButton("Submit Patient");
         nextOrSubButton.setEnabled(false);
+        nextButtonPressed = false;
         ActionListener nextOrSubListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e){
                 if (nextOrSubButton.getText().equals("Next") && areBasicFieldsValid()){
                     changeQcard();
                     backButton.setEnabled(true);
+                    if (!nextButtonPressed) {  
+                        interviewAnswers.add(new Answer("firstName", FnameField.getText().trim()));
+                        interviewAnswers.add(new Answer("lastName", LnameField.getText().trim()));
+                        interviewAnswers.add(new Answer("age", AgeField.getText().trim()));
+                        interviewAnswers.add(new Answer("gender", GenderField.getText().trim()));
+                        interviewAnswers.add(new Answer("blood_type", bloodField.getText().trim()));
+                        interviewAnswers.add(new Answer("pain_level", painLevelBox.getSelectedItem().toString())); 
+                        nextButtonPressed = true;
+                    }
+                    
                 } else if (nextOrSubButton.getText().equals("Submit Patient")){
                     if (currentCard.equals("BasicQ") && areBasicFieldsValid()){
+                        if (!nextButtonPressed) {  
+                            interviewAnswers.add(new Answer("firstName", FnameField.getText().trim()));
+                            interviewAnswers.add(new Answer("lastName", LnameField.getText().trim()));
+                            interviewAnswers.add(new Answer("age", AgeField.getText().trim()));
+                            interviewAnswers.add(new Answer("gender", GenderField.getText().trim()));
+                            interviewAnswers.add(new Answer("blood_type", bloodField.getText().trim()));
+                            interviewAnswers.add(new Answer("pain_level", painLevelBox.getSelectedItem().toString())); 
+                            nextButtonPressed = true;
+                        }
                         submitPatientSQLinfo();
                     } else if (currentCard.equals("AdvancedQ") && areAdvancedFieldsValid()){
+                        interviewAnswers.add(new Answer("allergies", allergiesArea.getText().trim()));
+                        interviewAnswers.add(new Answer("medications", medicationsArea.getText().trim()));
                         submitPatientSQLinfo();
+
                     }
                 }
             };
@@ -237,18 +277,18 @@ public class PatientInfoProduction {
             int age = Integer.parseInt(AgeField.getText().trim());
 
             if (noButton.isSelected()) {
-                sqlPatAdd(FnameField.getText().trim(), LnameField.getText().trim(), age, GenderField.getText().trim());
+                sqlPatAdd(interviewAnswers);
                 JOptionPane.showMessageDialog(frame,
                     "Patient saved successfully.\n\n" +
                     "Medical History Summary:\n" +
                     "Name: "+ FnameField.getText().trim()+" "+ LnameField.getText().trim()+"\n"+
                     "Age: " + age + "\n" +
                     "Gender: " + GenderField.getText().trim() + "\n" +
-                    "Symptoms: " + symptomsArea.getText().trim() + "\n" +
+                    "Blood type: " + bloodField.getText().trim() + "\n" +
                     "Pain Level: " + painLevel
             );  
             } else{
-                sqlPatAdd(FnameField.getText().trim(), LnameField.getText().trim(), age, GenderField.getText().trim());
+                sqlPatAdd(interviewAnswers);
                 JOptionPane.showMessageDialog(frame,
                     "Patient saved successfully.\n\n" +
                     "Medical History Summary:\n" +
@@ -270,9 +310,12 @@ public class PatientInfoProduction {
             allergiesArea.setText("");
             medicationsArea.setText("");
             symptomsArea.setText("");
+            bloodField.setText("");
             painLevelBox.setSelectedIndex(0);
             YNbuttonGroup.clearSelection();
             nextOrSubButton.setEnabled(false);
+            interviewAnswers.clear();
+            nextButtonPressed = false;
             changeQcardToBasic();
 
         } catch (NumberFormatException error){
@@ -283,14 +326,78 @@ public class PatientInfoProduction {
     }
 
     //sql logic
-    public static void sqlPatAdd(String fName, String lName, Integer age, String gender) throws Exception {
-        String jdbcURL = "jdbc:mysql://localhost:3306/its340LAB8db";
+    //Universal/global class to store answers and their respective DB column names
+    public class Answer{
+        private String questionColumnName;
+        private String userResponse;
+
+        public Answer(String questionColumnName, String userResponse){
+            this.questionColumnName = questionColumnName;
+            this.userResponse = userResponse;
+        }
+
+        public String getQuestionName(){
+            return questionColumnName;
+        }
+
+        public String getUserResponse(){
+            return userResponse;
+        }
+    }
+    //method to properly get user response
+    private String getUserResFromQuestion(ArrayList<Answer> answers, String questColName){
+        for (Answer a : answers){
+            if (a.getQuestionName().equals(questColName)){
+                return a.getUserResponse();
+            }
+        }
+        return ""; //return nothing if column name not found
+    }
+    private void insertIntoCommaSepList(String rawList){
+        String[] items = rawList.split(",");
+    }
+
+    //Actual insertion of SQL values
+    public void sqlPatAdd(ArrayList<Answer> answerList) throws Exception {
+        String jdbcURL = "jdbc:mysql://localhost:3306/its340ProjectDB";
         String username = "root";
         String password = "toor";
+
+        String[] columnNames = {"firstName", "lastName", "age", "gender", "blood_type", "pain_level"};
+        Set<String> numericColumnNames = Set.of("age", "pain_level");
+
+        StringBuilder columnsToInsert = new StringBuilder();
+        StringBuilder valuesToInsert = new StringBuilder();
+        Boolean isFirstValue = true;
+
+        for (String column : columnNames){
+            String value = getUserResFromQuestion(answerList, column);
+            if (value == null || value.isBlank()){
+                continue;
+                //skip null values since only 3 are required, so nulls may appear
+            }
+
+            if (!isFirstValue){
+                columnsToInsert.append(", ");
+                valuesToInsert.append(", ");
+            } else {
+                isFirstValue = false;
+            }
+            columnsToInsert.append(column);
+            if(numericColumnNames.contains(column)){
+                valuesToInsert.append(value);
+            } else {
+                valuesToInsert.append("'").append(value).append("'");
+            }
+        }
+
+        String SQLquery = "INSERT INTO patients(" + columnsToInsert + ") VALUES (" + valuesToInsert + ")";
+        System.out.println("running the query: "+SQLquery);
+
         try{
             Connection conn = DriverManager.getConnection(jdbcURL, username, password);
             Statement stmt = conn.createStatement();
-            stmt.executeUpdate("INSERT INTO Patients(lastName, firstName, age, gender) VALUES ('"+fName+"', '"+lName+"', "+age+", '"+gender+"')");
+            stmt.executeUpdate(SQLquery);
             conn.close();
         } catch(Exception e){
             System.err.println(e.getMessage());
