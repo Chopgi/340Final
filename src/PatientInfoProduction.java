@@ -11,9 +11,10 @@ public class PatientInfoProduction {
     private CardLayout questionCardLayout;
     private JPanel cardPanel;
     private JButton backButton, nextOrSubButton;
+    private ButtonGroup YNbuttonGroup;
     private JRadioButton yesButton, noButton;
     private JTextField FnameField, LnameField, AgeField, GenderField;
-    private JTextField allergiesArea, medicationsArea;
+    private JTextField allergiesArea, medicationsArea, symptomsArea;
     private JComboBox<Integer> painLevelBox;
     private String currentCard = "BasicQ"; //pre-set current card as basic question card
     public static void main(String[] args) {
@@ -67,7 +68,7 @@ public class PatientInfoProduction {
         //TO DO: Move allergies & medications to advanced and replace with yes/no radio
 
         // Yes/no radio
-        ButtonGroup YNbuttonGroup = new ButtonGroup();
+        YNbuttonGroup = new ButtonGroup();
         
         yesButton = new JRadioButton("Yes");
         noButton = new JRadioButton("No");
@@ -90,7 +91,7 @@ public class PatientInfoProduction {
         noButton.addActionListener(radioListener);
         
         //symptoms and painlevel dropdown 
-        JTextField symptomsArea = new JTextField();
+        symptomsArea = new JTextField();
         //combobox for pain level
         painLevelBox = new JComboBox<>();
         for (int i = 0; i <= 10; i++) {
@@ -133,7 +134,7 @@ public class PatientInfoProduction {
         cardPanel.add(questionPanel2, "AdvancedQ");
         mainBLpanel.add(cardPanel, BorderLayout.CENTER);
         
-        //Buttons
+        //Buttons -- Back button & logic
         JPanel buttonPanel = new JPanel(new GridLayout(0,2));
         mainBLpanel.add(buttonPanel, BorderLayout.SOUTH);
 
@@ -141,61 +142,34 @@ public class PatientInfoProduction {
         backButton.setEnabled(false);
         buttonPanel.add(backButton);
 
+        ActionListener backListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+                changeQcardToBasic();
+            };
+        };    
+        backButton.addActionListener(backListener);      
+
+        //Next or submit button & logic
         nextOrSubButton = new JButton("Submit Patient");
-        //set button to be submit if radio is no & next if radio is yes
+        nextOrSubButton.setEnabled(false);
         ActionListener nextOrSubListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e){
-                areBasicFieldsValid();
+                if (nextOrSubButton.getText().equals("Next") && areBasicFieldsValid()){
+                    changeQcard();
+                    backButton.setEnabled(true);
+                } else if (nextOrSubButton.getText().equals("Submit Patient")){
+                    if (currentCard.equals("BasicQ") && areBasicFieldsValid()){
+                        submitPatientSQLinfo();
+                    } else if (currentCard.equals("AdvancedQ") && areAdvancedFieldsValid()){
+                        submitPatientSQLinfo();
+                    }
+                }
             };
         };
         nextOrSubButton.addActionListener(nextOrSubListener);        
-        nextOrSubButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    String firstName = FnameField.getText().trim();
-                    String lastName = LnameField.getText().trim();
-                    String gender = GenderField.getText().trim();
-                    String allergies = allergiesArea.getText().trim();
-                    String medications = medicationsArea.getText().trim();
-                    String symptoms = symptomsArea.getText().trim();
-                    int painLevel = (Integer) painLevelBox.getSelectedItem();
-
-                    if (firstName.isEmpty() || lastName.isEmpty() || AgeField.getText().trim().isEmpty()) {
-                        JOptionPane.showMessageDialog(frame, "First name, last name, and age are required.");
-                        return;
-                    }
-
-                    int age = Integer.parseInt(AgeField.getText().trim());
-
-                    sqlPatAdd(firstName, lastName, age, gender);
-
-                    JOptionPane.showMessageDialog(frame,
-                            "Patient saved successfully.\n\n" +
-                            "Medical History Summary:\n" +
-                            "Allergies: " + allergies + "\n" +
-                            "Medications: " + medications + "\n" +
-                            "Symptoms: " + symptoms + "\n" +
-                            "Pain Level: " + painLevel
-                    );
-
-                    FnameField.setText("");
-                    LnameField.setText("");
-                    AgeField.setText("");
-                    GenderField.setText("");
-                    allergiesArea.setText("");
-                    medicationsArea.setText("");
-                    symptomsArea.setText("");
-                    painLevelBox.setSelectedIndex(0);
-
-                } catch (NumberFormatException error) {
-                    JOptionPane.showMessageDialog(frame, "Age must be a valid number.");
-                } catch (Exception error) {
-                    JOptionPane.showMessageDialog(frame, "Error: " + error.getMessage());
-                }
-            }
-        });
-
+        //nextOrSubButton.addActionListener(submitPatientSQLinfo());
         buttonPanel.add(nextOrSubButton);
         frame.getContentPane().add(mainBLpanel);
     }
@@ -205,23 +179,108 @@ public class PatientInfoProduction {
             backButton.setEnabled(false);
             if (yesButton.isSelected()){
                 nextOrSubButton.setText("Next");
+                nextOrSubButton.setEnabled(true);
             } else if (noButton.isSelected()){
                 nextOrSubButton.setText("Submit Patient");
+                nextOrSubButton.setEnabled(true);
             }
         } else {
             backButton.setEnabled(true);
             nextOrSubButton.setText("Submit Patient");
+            //nextOrSubButton.setEnabled(areAdvancedFieldsValid());
         }
     }
-    private void areBasicFieldsValid(){
-        if (FnameField.getText().isBlank() || LnameField.getText().isBlank() || AgeField.getText().isBlank()) {
-                        JOptionPane.showMessageDialog(frame, "First name, last name, and age are required.");
-                        return;
-                    }
 
+    //Methods to check if required information is present
+    private boolean areBasicFieldsValid(){
+        try {
+            int age = Integer.parseInt(AgeField.getText().trim()); //will throw exception if not possible & return false
+            if (FnameField.getText().isBlank() || LnameField.getText().isBlank() || AgeField.getText().isBlank()){
+                JOptionPane.showMessageDialog(frame, "First name, last name, and age are required.");
+                return false;
+            } else {
+                return true;
+            }            
+        } catch (NumberFormatException error) {
+            JOptionPane.showMessageDialog(frame, "Age must be a valid number.");
+            return false;
+        }
     }
+    private boolean areAdvancedFieldsValid(){
+        if (allergiesArea.getText().isBlank() || medicationsArea.getText().isBlank() || symptomsArea.getText().isBlank()){
+            JOptionPane.showMessageDialog(frame, "Allergies, Medication, and Symptoms are required.");
+            return false;
+        } else {
+            return true;
+        }
+    }
+    
+    //Method to change cards/question view
+    private void changeQcard(){
+        questionCardLayout.show(cardPanel, "AdvancedQ");
+        currentCard = "AdvancedQ";
+        updateNavigationButtons();
+    }
+    private void changeQcardToBasic(){
+        questionCardLayout.show(cardPanel, "BasicQ");
+        currentCard = "BasicQ";
+        updateNavigationButtons();
+    }    
 
 
+    //sql form submission logic
+
+    //update each submission to submit their respective basic or advanced info
+    private void submitPatientSQLinfo(){
+        try{
+            int painLevel = (Integer) painLevelBox.getSelectedItem();
+            int age = Integer.parseInt(AgeField.getText().trim());
+
+            if (noButton.isSelected()) {
+                sqlPatAdd(FnameField.getText().trim(), LnameField.getText().trim(), age, GenderField.getText().trim());
+                JOptionPane.showMessageDialog(frame,
+                    "Patient saved successfully.\n\n" +
+                    "Medical History Summary:\n" +
+                    "Name: "+ FnameField.getText().trim()+" "+ LnameField.getText().trim()+"\n"+
+                    "Age: " + age + "\n" +
+                    "Gender: " + GenderField.getText().trim() + "\n" +
+                    "Symptoms: " + symptomsArea.getText().trim() + "\n" +
+                    "Pain Level: " + painLevel
+            );  
+            } else{
+                sqlPatAdd(FnameField.getText().trim(), LnameField.getText().trim(), age, GenderField.getText().trim());
+                JOptionPane.showMessageDialog(frame,
+                    "Patient saved successfully.\n\n" +
+                    "Medical History Summary:\n" +
+                    "Name: "+ FnameField.getText().trim()+" "+ LnameField.getText().trim()+"\n"+
+                    "Age: " + age + "\n" +
+                    "Gender: " + GenderField.getText().trim() + "\n" +
+                    "Allergies: " + allergiesArea.getText().trim() + "\n" +
+                    "Medications: " + medicationsArea.getText().trim() + "\n" +
+                    "Symptoms: " + symptomsArea.getText().trim() + "\n" +
+                    "Pain Level: " + painLevel
+                );
+            }
+            
+
+            FnameField.setText("");
+            LnameField.setText("");
+            AgeField.setText("");
+            GenderField.setText("");
+            allergiesArea.setText("");
+            medicationsArea.setText("");
+            symptomsArea.setText("");
+            painLevelBox.setSelectedIndex(0);
+            YNbuttonGroup.clearSelection();
+            nextOrSubButton.setEnabled(false);
+            changeQcardToBasic();
+
+        } catch (NumberFormatException error){
+            JOptionPane.showMessageDialog(frame, "Age must be a valid number.");
+        } catch (Exception error){
+            JOptionPane.showMessageDialog(frame, "Error: " + error.getMessage());
+        } 
+    }
 
     //sql logic
     public static void sqlPatAdd(String fName, String lName, Integer age, String gender) throws Exception {
@@ -241,10 +300,4 @@ public class PatientInfoProduction {
         //    System.out.println("ID: "+rs.getInt("patientID")+ ", Last Name: " + rs.getString("lastName") + ", First Name: " + rs.getString("firstName") + "Age: "+rs.getInt("age") + ", gender: " + rs.getString("gender"));
         //}
     }
-    
-
-
-
-
-
 }
