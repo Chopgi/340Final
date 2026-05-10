@@ -7,7 +7,8 @@ CREATE TABLE patients (
   firstName VARCHAR(50),
   age INT,
   gender VARCHAR(10) DEFAULT NULL,
-  blood_type VARCHAR(3) DEFAULT NULL);
+  blood_type VARCHAR(3) DEFAULT NULL,
+  pain_level INT DEFAULT NULL);
   
 CREATE TABLE allergy_history (
   AllergyID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
