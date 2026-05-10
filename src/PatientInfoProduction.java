@@ -242,6 +242,7 @@ public class PatientInfoProduction {
     private boolean areBasicFieldsValid(){
         try {
             int age = Integer.parseInt(AgeField.getText().trim()); //will throw exception if not possible & return false
+            System.out.println(age);
             if (FnameField.getText().isBlank() || LnameField.getText().isBlank() || AgeField.getText().isBlank()){
                 JOptionPane.showMessageDialog(frame, "First name, last name, and age are required.");
                 return false;
