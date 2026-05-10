@@ -28,6 +28,11 @@ CREATE TABLE medication_history (
 CREATE TABLE hereditary_diseases_history (
   hereditary_diseaseID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   patientID INT,
-  hereditary_disease VARCHAR(50));   
+  hereditary_disease VARCHAR(50));
+  
+CREATE TABLE symptom_history (
+  symptomID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  patientID INT,
+  symptom VARCHAR(50));     
 
  SELECT * FROM its340ProjectDB.patients;
